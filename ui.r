@@ -3,9 +3,6 @@ ui <- fluidPage(
 
 
 
-
-
-
   sidebarLayout(
     sidebarPanel(
       width = 3,
