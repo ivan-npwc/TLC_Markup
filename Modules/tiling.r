@@ -6,8 +6,8 @@
   library(sf)
 
 
-  outdir="E:\\SSL_DB_Tiles"
-  # RDSdata=readRDS("C:\\Users\\usato\\SSL_DB\\TLC_markUp\\image_tiles.rds")
+  outdir= "E:\\SSL_DB_Tiles";dir.create(outdir)
+  # "C:\\Users\\usato\\SSL_DB\\TLC_UIA\\image_tiles.rds"
  # imgdata=read.csv( "C:\\Users\\usato\\SSL_DB\\TLC_markUp\\images_data.csv")
  # imgdata=imgdata[imgdata$site=="71"]
    
@@ -15,14 +15,18 @@
    RDSi=RDSdata[[imgdata$site]][[imgdata$poly]]
 
   tile_sizes = RDSi[[1]]
-  img_dims = as.numeric(strsplit(imgdata$dimensions, " ")[[1]])
-  img_width <- img_dims[2]
-  img_height <- img_dims[1]
+ 
   mask_x =  c(RDSi$Mask$x)
   mask_y=  c(RDSi$Mask$y)
   mask_x =c( mask_x , mask_x[1])
   mask_y =c( mask_y , mask_y[1])
   image_path <- imgdata$image_path
+   img <- readImage(image_path)
+   
+    img_dims = dim(img)
+    img_width <- img_dims[1]
+    img_height <- img_dims[2]
+   
   bsnme= basename(image_path)
   year=substr(bsnme,1,4)
   day = substr(bsnme,1,8)
@@ -30,15 +34,32 @@
   output_dir =paste0(tilsDir,"\\",day);dir.create(output_dir,showWarnings = F)
 ##############################################################################################
 # 4. Функция для проверки пересечения тайла с маской
-check_tile_center <- function(x_start, y_start, tile_size, mask_polygon) {
-	  center_x <- x_start + tile_size / 2
-	  center_y <- y_start + tile_size / 2
-	  center_point <- st_point(c(center_x, center_y)) %>%
-		st_sfc() %>%
-		st_sf()
+check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) {
+  library(sf)
   
-  # Проверяем, находится ли центр тайла внутри полигона
-  return(st_intersects(center_point, mask_polygon, sparse = FALSE)[1, 1])
+  # Определяем координаты всех четырех углов тайла
+  x_coords <- c(
+    x_start,              # левый верхний
+    x_start + tile_size,  # правый верхний  
+    x_start + tile_size,  # правый нижний
+    x_start               # левый нижний
+  )
+  
+  y_coords <- c(
+    y_start,              # левый верхний
+    y_start,              # правый верхний
+    y_start + tile_size,  # правый нижний
+    y_start + tile_size   # левый нижний
+  )
+  
+  # Создаем точки для всех углов
+  corner_points <- st_multipoint(cbind(x_coords, y_coords)) %>%
+    st_sfc() %>%
+    st_sf()
+  
+  # Проверяем, находится ли хотя бы один угол внутри полигона
+  intersections <- st_intersects(corner_points, mask_polygon, sparse = FALSE)
+  return(any(intersections))
 }
 ###############################################################################################
 # Создаем объект полигона для маски используя sf
@@ -47,7 +68,6 @@ mask_polygon <- st_polygon(list(cbind(mask_x, mask_y))) %>%
   st_sfc() %>%
   st_sf()
   
- img <- readImage(image_path)
  tile_sizes_rounded <- round(tile_sizes)
  
  # Создаем кумулятивную сумму для получения Y-координат начала каждого ряда тайлов
@@ -87,7 +107,7 @@ for (i in 1:length(valid_rows)) {
     if (x_end < img_width) {
     
     # Проверяем пересечение с маской (используем быстрый метод по центру)
-    if (check_tile_center(x_start, y_start, tile_size, mask_polygon)==T) {
+    if (check_tile_corners(x_start, y_start, tile_size, mask_polygon)==T) {
   
   
        img_width

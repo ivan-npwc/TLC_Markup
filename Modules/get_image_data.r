@@ -8,11 +8,11 @@ get_image_data <<- function(image_directory) {
   for (i in 1:length(jpeg_files)) {
   
     image_path=jpeg_files[i]
-    img <- image_read(image_path)
+   # img <- image_read(image_path)
 
-     img_info <- image_info(img)
-     width <- img_info$width
-     height <- img_info$height
+  #   img_info <- image_info(img)
+     width <- ""#img_info$width
+     height <- ""#img_info$height
       file_name <- basename(image_path)
 	  dtime = substr(file_name,1,16)
 	  ext = file_ext(file_name)

@@ -1,5 +1,5 @@
 
-server <- function(input, output, session) {
+function(input, output, session) {
   
  ####################################################### 
  values <- reactiveValues(

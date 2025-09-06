@@ -1,5 +1,6 @@
+options = list(display.mode='showcase')
 
-ui <- fluidPage(
+fluidPage(
 
 
 
