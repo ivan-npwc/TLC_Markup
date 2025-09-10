@@ -13,10 +13,10 @@
    registerDoMC(cores = num_cores)
    flog.appender(appender.file("parallel.log"))
   ##########################
-  indir= "/media/ivan/2023_ HD2/SSL_DB"
-  outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
-  RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
-  imgsdtpth = "/home/ivan/image_data.csv"
+  indir= "/home/npwc/NAS_TITAN/SSL_DB"
+  outdir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
+  RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
+  imgsdtpth = "/home/npwc/image_data.csv"
   control_tmp_pth="control_tmp.rds"
  ######################################### 
   RDSdata = readRDS(RDSpth)
