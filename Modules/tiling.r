@@ -1,25 +1,29 @@
 
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
+#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/reconstract_image_from_tiles.r")
   library(EBImage)
   library(sp)
   library(sf)
   library(tools)
   library(doMC) 
+  library(futile.logger)
+
   ###########################
-   num_cores <- detectCores()  - 4
+   num_cores <- detectCores()  - 10
    registerDoMC(cores = num_cores)
+   flog.appender(appender.file("parallel.log"))
   ##########################
   indir= "/media/ivan/2023_ HD2/SSL_DB"
   outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
   RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
   imgsdtpth = "/home/ivan/image_data.csv"
-  control_tmp_pth="control_tmp.csv"
+  control_tmp_pth="control_tmp.rds"
  ######################################### 
   RDSdata = readRDS(RDSpth)
   imgs_dt=read.csv(imgsdtpth)
   if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
   if (dir.exists(outdir)==F) {stop("NO OUT DIR FOUND")}
-  if (file.exists(control_tmp_pth)==T){control_tmp=read.csv(control_tmp_pth)} else {control_tmp=data.frame(site="",day="",cam="")}
+  if (file.exists(control_tmp_pth)==T){control_tmp=readRDS(control_tmp_pth)} else {control_tmp=list()}
   ##########################
   head(imgs_dt)
   imgs_dt=imgs_dt[imgs_dt$status == "success",]
@@ -59,7 +63,6 @@
 	newpth=paste0(indir,bspth[[1]][2])
 	imgs_dt$image_path[i]=newpth
 	}}
-################################################
 ###############################################################################################
 imgs_dt$day=substr(basename(imgs_dt$image_path),1,8)
 ##############	
@@ -67,7 +70,7 @@ uniqsites =unique(imgs_dt$site)
 uniqcam =unique(imgs_dt$poly)
 uniqday =unique(imgs_dt$day)
 
- for (sts in 1: 2){ #length(uniqsites)
+ for (sts in 1: length(uniqsites)){ #
     site = uniqsites[sts]
 	print(site)
 	site_no_site =gsub("site_","",site)
@@ -76,13 +79,13 @@ uniqday =unique(imgs_dt$day)
 	site_days =unique(site_data$day)
 	  for (ds in 1:length(site_days)){
 	  day1 =site_days[ds]
-	  print(day1)
+	  print(paste0("     ",day1))
 	  site_day_data = site_data[site_data$day==day1,]
 	  site_days_cam =unique(site_day_data$poly)
 	      for (pl in 1:length(site_days_cam)){
 		  
 		  poly1 = site_days_cam[pl]
-		  print(poly1)
+		  print(paste0("          ",poly1))
 		  cam = gsub("poly","",poly1)
 		  cam=paste0(cam,".JPG")
 		  
@@ -90,26 +93,27 @@ uniqday =unique(imgs_dt$day)
 #		      poly1 %in% control_tmp$cam &
 #			  day1 %in% control_tmp$day
 #			  ) next
-		  
-		  
-	
+
 		    site_days_cam_data =site_day_data[site_day_data$poly == poly1,]
 			tmp = basename(site_days_cam_data$image_path)[1]
             daydir =gsub(tmp,"", site_days_cam_data$image_path[1])
-			lstimgs =list.files(daydir,full.names=T,pattern = cam)
-###############			
-			
-
+			lstimgs =list.files(daydir,full.names=T,pattern = cam)			
  ###############################################################
-# result=mclapply(lstimgs, function(lstimgs) {
-  for (imgs in 1:length(lstimgs)){
-    imgpth = lstimgs[imgs]
+ saved_tiles <- list()
+ result_day=mclapply(lstimgs, function(imgpth) {
+   library(EBImage)
+  library(sp)
+  library(sf)
+  library(tools)
+  library(doMC) 
+  library(futile.logger)
+#  for (imgs in 1:length(lstimgs)){
+  #  imgpth = lstimgs[d]
    ##################################################################
     img <- readImage(imgpth)
     img_dims = dim(img)
     img_width <- img_dims[1]
     img_height <- img_dims[2]
-	################
 	##########################################################
 RDSi = RDSdata[[site]][[poly1]]
 			tile_sizes = RDSi[[1]]
@@ -134,15 +138,13 @@ y_ends1 <- cumsum(tile_sizes_rounded)
 	
     bsnme= basename(imgpth)
     year=substr(bsnme,1,4)
-    day <<- substr(bsnme,1,8)
+    day <- substr(bsnme,1,8)
     tilsDir =paste0(outdir,"/",year,"_",site_no_site,"_Tiles");dir.create(tilsDir,showWarnings = F)
    output_dir =paste0(tilsDir,"/",day);dir.create(output_dir,showWarnings = F)
 
 ##########################################################
 # 4. Функция для проверки пересечения тайла с маской
-check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) {
-  library(sf)
-  
+check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) { 
   # Определяем координаты всех четырех углов тайла
   x_coords <- c(
     x_start,              # левый верхний
@@ -169,9 +171,12 @@ check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) {
 }
 # 6. Нарезка и сохранение тайлов
 ########################################################################
+saved_tiles <- list()
 for (rows in 1:length(valid_rows)) {
   # Получаем размер тайла для текущего ряда
   tile_size <- tile_sizes_rounded[rows]
+   # Пропускаем если размера тайла мал
+  if (tile_size < 120) next
   
   # Координаты Y для текущего ряда
   y_start <- y_starts[rows]
@@ -184,7 +189,7 @@ for (rows in 1:length(valid_rows)) {
   n_tiles_x <- floor(img_width / tile_size)
     
    # print(paste("started row  ", rows))
-    print(paste("number tiles in the row", n_tiles_x))
+  #  print(paste("number tiles in the row", n_tiles_x))
   for (tls in 1:n_tiles_x) {
     # Координаты X для текущего тайла
     x_start <- (tls - 1) * tile_size + 1
@@ -221,20 +226,22 @@ for (rows in 1:length(valid_rows)) {
         
         output_path <- file.path(output_dir, tile_name)
         writeImage(tile, output_path, quality = 85)
+		saved_tiles <- c(saved_tiles, tile_name)
     }
     }
     }
     }
- 
-    #return(saved_count)
-	}
-#  }, mc.cores = num_cores)
+  return(saved_tiles)
+	
+#	}
+  }, mc.cores = num_cores)
 #################################################################  
  }
 #  control_site_days_cam = data.frame(site=site,day=day1,cam=poly1)
 # control_tmp =rbind(control_site_days_cam,control_tmp)
 # write.csv(control_tmp,control_tmp_pth)
  }
+ control_tmp=c(control_tmp,result_day)
  }
 
-
+head(result)
