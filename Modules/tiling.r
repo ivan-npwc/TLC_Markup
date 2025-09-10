@@ -1,6 +1,6 @@
 
-#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
-#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/reconstract_image_from_tiles.r")
+#source("/home/npwc/GIT/TLC_Markup/Modules/tiling.r")
+#source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
   library(EBImage)
   library(sp)
   library(sf)
