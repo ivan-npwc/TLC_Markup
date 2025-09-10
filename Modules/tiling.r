@@ -28,7 +28,7 @@
   head(imgs_dt)
   imgs_dt=imgs_dt[imgs_dt$status == "success",]
  ###########################################chesk 
-  source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+  source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
 	 RDStbl =RDStoTable(RDSpth)
 	 RDStbl$sitepoly=paste0("site_",RDStbl$site,"#","poly_", RDStbl$poly)
 	 imgs_dt$sitepoly=paste0(imgs_dt$site,"#",imgs_dt$poly) 
@@ -82,8 +82,15 @@ uniqday =unique(imgs_dt$day)
 	  print(paste0("     ",day1))
 	  site_day_data = site_data[site_data$day==day1,]
 	  site_days_cam =unique(site_day_data$poly)
+	  
+	  #########################
+year=substr(day1,1,4)
+day=day1
+   tilsDir =paste0(outdir,"/",year,"_",site_no_site,"_Tiles");dir.create(tilsDir,showWarnings = F)
+   output_dir =paste0(tilsDir,"/",day);dir.create(output_dir,showWarnings = F)
+  lsttlspresence=list.files(output_dir); if (length(lsttlspresence) > 1000) next  
+ ###############################################################
 	      for (pl in 1:length(site_days_cam)){
-		  
 		  poly1 = site_days_cam[pl]
 		  print(paste0("          ",poly1))
 		  cam = gsub("poly","",poly1)
@@ -97,8 +104,8 @@ uniqday =unique(imgs_dt$day)
 		    site_days_cam_data =site_day_data[site_day_data$poly == poly1,]
 			tmp = basename(site_days_cam_data$image_path)[1]
             daydir =gsub(tmp,"", site_days_cam_data$image_path[1])
-			lstimgs =list.files(daydir,full.names=T,pattern = cam)			
- ###############################################################
+			lstimgs =list.files(daydir,full.names=T,pattern = cam)	
+
  saved_tiles <- list()
  result_day=mclapply(lstimgs, function(imgpth) {
    library(EBImage)
@@ -247,6 +254,7 @@ for (rows in 1:length(valid_rows)) {
 # write.csv(control_tmp,control_tmp_pth)
  }
  control_tmp=c(control_tmp,result_day)
+ writeRDS(control_tmp,control_tmp_pth)
  }
 
 head(result)
