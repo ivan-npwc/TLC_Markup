@@ -110,6 +110,7 @@ uniqday =unique(imgs_dt$day)
 #  for (imgs in 1:length(lstimgs)){
   #  imgpth = lstimgs[d]
    ##################################################################
+   tryCatch({
     img <- readImage(imgpth)
     img_dims = dim(img)
     img_width <- img_dims[1]
@@ -234,6 +235,10 @@ for (rows in 1:length(valid_rows)) {
   return(saved_tiles)
 	
 #	}
+ }, error = function(e) {
+    warning(paste("Error", imgpth, ":", e$message))
+    return(imgpth)
+  })
   }, mc.cores = num_cores)
 #################################################################  
  }
