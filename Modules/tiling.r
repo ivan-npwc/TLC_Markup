@@ -1,24 +1,5 @@
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
 #source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
-#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
-##
-#indir= "/media/ivan/2023_ HD2/SSL_DB"
-#outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
-#RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
-#imgsdtpth = "/home/ivan/image_data.csv"
-#control_tmp_pth="control_tmp.rds"
-######################################### 
-#source("/home/npwc/GIT/TLC_Markup/Modules/tiling.r")
-#source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
-source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
-  ##########################
-  indir= "/home/npwc/NAS_TITAN/SSL_DB"
-  outdir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
-  RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
-  imgsdtpth = "/home/npwc/image_data.csv"
-  control_tmp_pth="control_tmp.rds"
- ######################################### 
-<<<<<<< Updated upstream
 library(EBImage)
 library(sp)
 library(sf)
@@ -28,11 +9,17 @@ library(futile.logger)
 
 ###########################
  # Обрабатываем изображения небольшими батчами
- batch_size <- 100 # Обрабатываем по 10 изображений за раз
-num_cores <- detectCores() - 5
+ batch_size <- 10 # Обрабатываем по 10 изображений за раз
+num_cores <- detectCores() - 10
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
-
+##########################
+indir= "/media/ivan/2023_ HD2/SSL_DB"
+outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
+RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
+imgsdtpth = "/home/ivan/image_data.csv"
+control_tmp_pth="control_tmp.rds"
+######################################### 
 RDSdata = readRDS(RDSpth)
 imgs_dt=read.csv(imgsdtpth)
 if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
@@ -42,7 +29,7 @@ if (file.exists(control_tmp_pth)==T){control_tmp=readRDS(control_tmp_pth)} else 
 head(imgs_dt)
 imgs_dt=imgs_dt[imgs_dt$status == "success",]
 ###########################################chesk 
-
+source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 RDStbl =RDStoTable(RDSpth)
 RDStbl$sitepoly=paste0("site_",RDStbl$site,"#","poly_", RDStbl$poly)
 imgs_dt$sitepoly=paste0(imgs_dt$site,"#",imgs_dt$poly) 
@@ -69,64 +56,6 @@ if(length(uniqerr>0)){
   paste0("PLEASE  REVIEW AND  MAKE MARCKUP FOR   IMAGES IN FOLDER  " ,errDir  )
   stop(paste0("No markUp found for ",   data.frame(uniqerr)))
 } 
-=======
-  source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
-  ##########################
-  indir= "/home/npwc/NAS_TITAN/SSL_DB"
-  outdir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
-  RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
-  imgsdtpth = "/home/npwc/image_data.csv"
-  control_tmp_pth="control_tmp.rds"
- ######################################### 
-  library(EBImage)
-  library(sp)
-  library(sf)
-  library(tools)
-  library(doMC) 
-  library(futile.logger)
-
-  ###########################
-   num_cores <- detectCores()  - 10
-   registerDoMC(cores = num_cores)
-   flog.appender(appender.file("parallel.log"))
-
-  RDSdata = readRDS(RDSpth)
-  imgs_dt=read.csv(imgsdtpth)
-  if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
-  if (dir.exists(outdir)==F) {stop("NO OUT DIR FOUND")}
-  if (file.exists(control_tmp_pth)==T){control_tmp=readRDS(control_tmp_pth)} else {control_tmp=list()}
-  ##########################
-  head(imgs_dt)
-  imgs_dt=imgs_dt[imgs_dt$status == "success",]
- ###########################################chesk 
-
-	 RDStbl =RDStoTable(RDSpth)
-	 RDStbl$sitepoly=paste0("site_",RDStbl$site,"#","poly_", RDStbl$poly)
-	 imgs_dt$sitepoly=paste0(imgs_dt$site,"#",imgs_dt$poly) 
-	 err=imgs_dt[!imgs_dt$sitepoly %in% RDStbl$sitepoly,]
-	 length(err$image_path)
-     uniqerr=unique(err$sitepoly)
- if(length(uniqerr>0)){
- errDir =paste0(outdir,"/NEDD_MARKUP"); dir.create(errDir)
-   for (i in 1:length(uniqerr)){
-   cam=uniqerr[i]
-   imgsNeedMarkUp =imgs_dt[imgs_dt$sitepoly == cam,]
-   index=sample(1 : length(imgsNeedMarkUp$sitepoly))[1:30]
-   imgspth =imgsNeedMarkUp[index,]
-      for(y in 1:length(imgspth)){
-	  row1 = imgspth[y,]
-	  site= gsub("site_","",row1$site)
-	  day=row1$day
-	  year= substr(basename(row1$image_path),1,4)
-	  Mapyearfold =paste0(errDir,"/",year,"_",site,"_Map");dir.create(Mapyearfold,showWarnings = F)
-	  dayfold= paste0(Mapyearfold,"/",day);dir.create(dayfold,showWarnings = F)
-    file.copy(row1$image_path,dayfold)
- }
- }
- paste0("PLEASE  REVIEW AND  MAKE MARCKUP FOR   IMAGES IN FOLDER  " ,errDir  )
- stop(paste0("No markUp found for ",   data.frame(uniqerr)))
- } 
->>>>>>> Stashed changes
 #######################################################################
 if (file.exists(imgs_dt$image_path[1])==F){
   for (i in 1:length(imgs_dt$image_path)){  # for case if SSL_db pth changed
