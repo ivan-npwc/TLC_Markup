@@ -1,4 +1,5 @@
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
+#source("/home/npwc/GIT/TLC_Markup/Modules/tiling.r")
 #source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
 library(EBImage)
 library(sp)
@@ -6,11 +7,10 @@ library(sf)
 library(tools)
 library(doMC) 
 library(futile.logger)
-
 ###########################
  # Обрабатываем изображения небольшими батчами
- batch_size <- 10 # Обрабатываем по 10 изображений за раз
-num_cores <- detectCores() - 10
+batch_size <- 10 # Обрабатываем по 10 изображений за раз
+num_cores <- 20
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
 ##########################
@@ -19,7 +19,15 @@ outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
 RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
 imgsdtpth = "/home/ivan/image_data.csv"
 control_tmp_pth="control_tmp.rds"
+source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
+#indir= "/media/npwc/NAS_TITAN/SSL_DB"
+#outdir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
+#RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
+#imgsdtpth = "/home/npwc/image_data.csv"
+#control_tmp_pth="control_tmp.rds"
+#source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+#########################################
 RDSdata = readRDS(RDSpth)
 imgs_dt=read.csv(imgsdtpth)
 if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
@@ -29,7 +37,7 @@ if (file.exists(control_tmp_pth)==T){control_tmp=readRDS(control_tmp_pth)} else 
 head(imgs_dt)
 imgs_dt=imgs_dt[imgs_dt$status == "success",]
 ###########################################chesk 
-source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+
 RDStbl =RDStoTable(RDSpth)
 RDStbl$sitepoly=paste0("site_",RDStbl$site,"#","poly_", RDStbl$poly)
 imgs_dt$sitepoly=paste0(imgs_dt$site,"#",imgs_dt$poly) 
