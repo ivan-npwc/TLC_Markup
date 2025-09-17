@@ -9,7 +9,7 @@ library(futile.logger)
 
 ###########################
  # Обрабатываем изображения небольшими батчами
- batch_size <- 20 # Обрабатываем по 10 изображений за раз
+ batch_size <- 10 # Обрабатываем по 10 изображений за раз
 num_cores <- detectCores() - 10
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
