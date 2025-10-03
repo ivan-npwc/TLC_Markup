@@ -12,13 +12,15 @@
 		
 		
 		
-    ssldir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
-    dirforimgserr = "/media/ivan/USATOV_2024/SSL_DB_Tiles/err_imgs"
+    ssldir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
+    dirforimgserr = "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles/err_imgs"
+	
     file_size=2000
     vision_dimensions=2
   #  DONE=read.csv("listImgPred_DONE_GOOD.csv")
     err=data.frame(imgs="")
-
+	
+	if (dir.exists(dirforimgserr)==F){dir.create(dirforimgserr)}
 
 listsites = list.files(ssldir, full.names=T,pattern="Tiles")
  for (e in 1:length(listsites)){
