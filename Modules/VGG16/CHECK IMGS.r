@@ -1,5 +1,5 @@
       
- #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/CHECK IMGS.r")
+ #source("/home/npwc/GIT/TLC_Markup/Modules/VGG16/CHECK IMGS.r")
 
 
 	    library(keras)
