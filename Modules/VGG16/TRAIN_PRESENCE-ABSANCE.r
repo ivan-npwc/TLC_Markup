@@ -1,4 +1,4 @@
-        #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/PRESENCE-ABSANCE.r")
+        #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/TRAIN_PRESENCE-ABSANCE.r")
         
         
         
@@ -13,10 +13,10 @@
 	NewModelCreate=T
 	BaseModel_pth =  ""
 	Species="branded_not_branded_128"
-	bth_size =32
+	bth_size =64
 	trgt_size =256
 	#epochs=100
-	validation_split=0.5
+	validation_split=0.8
 							
    dateTrain = substr(Sys.time(),1,10)				
    AllImg=length(list.files(train_dir, recursive=T))/2
@@ -34,11 +34,11 @@ dir.create(checkpoint_dir,showWarnings=F)
 	  rescale = 1/255,
 	 horizontal_flip = T, vertical_flip = T,
 	  rotation_range = 15,
-	  width_shift_range = 0.3,
-	  height_shift_range = 0.3,
-	  shear_range = 0.3,
-	 zoom_range = 0.4,
-         brightness_range=c(1,3),
+	  width_shift_range = 0.2,
+	  height_shift_range = 0.2,
+	  shear_range = 0.2,
+	 zoom_range = 0.2,
+    #     brightness_range=c(1,3),
 	  fill_mode = "nearest",
 	  validation_split=validation_split
 	)
@@ -68,12 +68,14 @@ dir.create(checkpoint_dir,showWarnings=F)
 		   
     modelTrain <<- keras_model_sequential() %>%
     conv_base %>%
-    layer_dropout(rate = 0.5) %>% 
+    layer_dropout(rate = 0.3) %>% 
     layer_flatten() %>%  
     layer_dense(units = 512, activation = "relu",name = "fc3") %>% 
     layer_batch_normalization() %>% 
+	layer_dropout(rate = 0.3) %>% 
     layer_dense(units = 256, activation = "relu",name = "fc4") %>%   
     layer_batch_normalization() %>%   
+	layer_dropout(rate = 0.3) %>% 
     layer_dense(units = 128, activation = "relu",name = "fc5") %>%
     layer_batch_normalization() %>%     
     layer_dense(units = train_generator$num_classes, activation = "softmax",name = "predictions")
@@ -105,7 +107,7 @@ dir.create(checkpoint_dir,showWarnings=F)
 	 modelTrain %>% fit(
 	  train_generator,
 	  steps_per_epoch =   train_step,
-	  epochs = 100,
+	  epochs = 200,
 	  validation_data = validation_generator,
 	  validation_steps = val_step,
 	  callbacks = list(cp_callback))
