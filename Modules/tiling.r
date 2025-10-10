@@ -1,5 +1,6 @@
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
 #source("/home/npwc/GIT/TLC_Markup/Modules/tiling.r")
+
 #source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
 library(EBImage)
 library(sp)
@@ -14,19 +15,19 @@ num_cores <- 20
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
 ##########################
-indir= "/media/ivan/2023_ HD2/SSL_DB"
-outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
-RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
-imgsdtpth = "/home/ivan/image_data.csv"
-control_tmp_pth="control_tmp.rds"
-source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+#indir= "/media/ivan/2023_ HD2/SSL_DB"
+#outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
+#RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
+#imgsdtpth = "/home/ivan/image_data.csv"
+#control_tmp_pth="control_tmp1.rds"
+#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
-#indir= "/media/npwc/NAS_TITAN/SSL_DB"
-#outdir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
-#RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
-#imgsdtpth = "/home/npwc/image_data.csv"
-#control_tmp_pth="control_tmp.rds"
-#source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+indir = "/mnt/adata8tb/SSL_DB"
+outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
+RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
+imgsdtpth = "/home/npwc/image_data.csv"
+control_tmp_pth="control_tmp1.rds"
+source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
 #########################################
 RDSdata = readRDS(RDSpth)
 imgs_dt=read.csv(imgsdtpth)
@@ -125,7 +126,7 @@ for (sts in 1: length(uniqsites)){ #
     day=day1
     tilsDir =paste0(outdir,"/",year,"_",site_no_site,"_Tiles");dir.create(tilsDir,showWarnings = F)
     output_dir =paste0(tilsDir,"/",day);dir.create(output_dir,showWarnings = F)
-    lsttlspresence=list.files(output_dir); if (length(lsttlspresence) > 1000) {print(paste0("SKIP   ", output_dir)); next  }
+    lsttlspresence=list.files(output_dir); if (length(lsttlspresence) > 5000) {print(paste0("SKIP   ", output_dir)); next  }
     ###############################################################
     
     for (pl in 1:length(site_days_cam)){
