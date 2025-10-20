@@ -14,8 +14,8 @@
     	library(reticulate)
        
 		
-Path_model_br = "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/branded_not_branded_128_2025-10-07_accuracy_0.81_epoch_133.h5"
-Preddir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
+Path_model_br = "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/branded_not_branded_128_2025-10-13_accuracy_0.92_epoch_97.h5"
+Preddir  =  "/mnt/adata8tb/SSL_DB_Tiles"
 file_size=2000
 batch_size=128
 vision_dimensions = 256
@@ -31,6 +31,7 @@ for (i in 1:length(listsites)){
  
  savesitedir = gsub("Presence","Branded",basename(sitedir))
  savesitedir1 = paste0(Preddir,"/",savesitedir)
+ unlink(savesitedir1, recursive=T)
  dir.create(savesitedir1,showWarnings=F)
  
  daysdir=list.files(sitedir,full.names=T)

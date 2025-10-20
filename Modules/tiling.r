@@ -10,35 +10,67 @@ library(doMC)
 library(futile.logger)
 ###########################
  # Обрабатываем изображения небольшими батчами
-batch_size <- 10 # Обрабатываем по 10 изображений за раз
-num_cores <- 20
+batch_size <- 25 # Обрабатываем по 10 изображений за раз
+num_cores <- 25
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
 ##########################
-#indir= "/media/ivan/2023_ HD2/SSL_DB"
-#outdir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
+#indir = "/mnt/adata8tb/SSL_DB"
+#outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
 #RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
 #imgsdtpth = "/home/ivan/image_data.csv"
-#control_tmp_pth="control_tmp1.rds"
+#control_tmp_pth="control_tmp.csv"
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
 indir = "/mnt/adata8tb/SSL_DB"
 outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
 RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
 imgsdtpth = "/home/npwc/image_data.csv"
-control_tmp_pth="control_tmp1.rds"
+control_tmp_pth="control_tmp.csv"
 source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
 #########################################
 RDSdata = readRDS(RDSpth)
-imgs_dt=read.csv(imgsdtpth)
+imgs_dt = read.csv(imgsdtpth)
+totallcount = length(unique(imgs_dt$image_path))
 if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
 if (dir.exists(outdir)==F) {stop("NO OUT DIR FOUND")}
-if (file.exists(control_tmp_pth)==T){control_tmp=readRDS(control_tmp_pth)} else {control_tmp=list()}
-##########################
-head(imgs_dt)
-imgs_dt=imgs_dt[imgs_dt$status == "success",]
-###########################################chesk 
+#########################################
+if (file.exists(imgs_dt$image_path[1])==F){
+print("SSL_DB path changed, please waite to restore the sistem info")
+  for (i in 1:length(imgs_dt$image_path)){  # for case if SSL_db pth changed
+    pth=imgs_dt$image_path[i]
+    bspth=strsplit(pth,"SSL_DB")
+    newpth=paste0(indir,bspth[[1]][2])
+    imgs_dt$image_path[i]=newpth
+  }
+  write.csv(imgs_dt,imgsdtpth,row.names=F)
+  }
+#####################################
+if (file.exists(control_tmp_pth)==T){control_tmp =read.csv(control_tmp_pth)} else {
+#create_control_tmp
+tlsdone = data.frame(list.files(outdir,recursive=T,pattern=".JPG"))
+tlsdone$img=gsub(".*#", "", basename(tlsdone[,1]))
+control_tmp = data.frame(img=unique(tlsdone$img))
+  if (length(control_tmp$img)>1){write.csv(control_tmp, control_tmp_pth, row.names=F)} else {
 
+
+control_tmp = data.frame(img="")}}
+################################################################
+ #lstdn =unlist(control_tmp)
+ #tilsdone =data.frame(lstdn)
+ #tilsdone =  unique(gsub(".*#", "", tilsdone$lstdn))
+ #imgdone = data.frame(img=unique(tilsdone))
+# length(imgdone$img)
+ 
+imgs_dt$img=basename(imgs_dt$image_path)
+imgs_dt=imgs_dt[imgs_dt$status == "success",]
+imgs_dt=imgs_dt[!imgs_dt$img %in%   control_tmp$img,]
+
+#needprocesscount = length(imgs_dt$img)
+#done = totallcount- needprocesscount
+donepercent = length(control_tmp$img)/totallcount*100
+print(donepercent)
+###########################################chesk 
 RDStbl =RDStoTable(RDSpth)
 RDStbl$sitepoly=paste0("site_",RDStbl$site,"#","poly_", RDStbl$poly)
 imgs_dt$sitepoly=paste0(imgs_dt$site,"#",imgs_dt$poly) 
@@ -66,14 +98,6 @@ if(length(uniqerr>0)){
   stop(paste0("No markUp found for ",   data.frame(uniqerr)))
 } 
 #######################################################################
-if (file.exists(imgs_dt$image_path[1])==F){
-  for (i in 1:length(imgs_dt$image_path)){  # for case if SSL_db pth changed
-    pth=imgs_dt$image_path[i]
-    bspth=strsplit(pth,"SSL_DB")
-    newpth=paste0(indir,bspth[[1]][2])
-    imgs_dt$image_path[i]=newpth
-  }}
-###############################################################################################
 imgs_dt$day=substr(basename(imgs_dt$image_path),1,8)
 ##############	
 uniqsites =unique(imgs_dt$site)	
@@ -110,28 +134,29 @@ check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) {
 # Основной цикл обработки
 for (sts in 1: length(uniqsites)){ #
   site = uniqsites[sts]
-  print(site)
+ # print(site)
   site_no_site =gsub("site_","",site)
   site_data = imgs_dt[imgs_dt$site==site,]
   site_days =unique(site_data$day)
   
   for (ds in 1:length(site_days)){
     day1 = site_days[ds]
-    print(paste0("     ",day1))
+  #  print(paste0("     ",day1))
     site_day_data = site_data[site_data$day==day1,]
     site_days_cam =unique(site_day_data$poly)
     
     #########################
     year=substr(day1,1,4)
     day=day1
-    tilsDir =paste0(outdir,"/",year,"_",site_no_site,"_Tiles");dir.create(tilsDir,showWarnings = F)
+    tilsDir =paste0(outdir,"/",year,"_",site_no_site,"_Tiles"); dir.create(tilsDir,showWarnings = F)
     output_dir =paste0(tilsDir,"/",day);dir.create(output_dir,showWarnings = F)
-    lsttlspresence=list.files(output_dir); if (length(lsttlspresence) > 5000) {print(paste0("SKIP   ", output_dir)); next  }
+  #  lsttlspresence=list.files(output_dir); if (length(lsttlspresence) > 5000) {print(paste0("SKIP   ", output_dir)); next  }
     ###############################################################
     
     for (pl in 1:length(site_days_cam)){
+	start_site_days_cam = as.numeric(Sys.time())
       poly1 = site_days_cam[pl]
-      print(paste0("          ",poly1))
+    #  print(paste0("          ",poly1))
       cam = gsub("poly","",poly1)
       cam=paste0(cam,".JPG")
       
@@ -159,7 +184,9 @@ for (sts in 1: length(uniqsites)){ #
         start_idx <- (batch - 1) * batch_size + 1
         end_idx <- min(batch * batch_size, length(lstimgs))
         batch_imgs <- lstimgs[start_idx:end_idx]
-        
+         
+        if (length(batch_imgs)==0){ break	}	 
+		
         result_batch <- mclapply(batch_imgs, function(imgpth) {
           tryCatch({
             # Загружаем изображение
@@ -232,16 +259,36 @@ for (sts in 1: length(uniqsites)){ #
             flog.error(paste("Error processing", imgpth, ":", e$message))
             return(NULL)
           })
-        }, mc.cores = min(num_cores, length(batch_imgs)))  # Ограничиваем количество ядер
+        }, mc.cores = min(num_cores, length(batch_imgs)))  # Ограничиваем количество ядер  
         
         # Сохраняем результаты батча
-        control_tmp <- c(control_tmp, result_batch)
-        saveRDS(control_tmp, control_tmp_pth)
+		resbtc=unlist(result_batch)
+		dn=data.frame(img=unique(basename(resbtc)))
+		
+		
+        control_tmp <- rbind(control_tmp, dn)
+		
+		done = length(control_tmp$img)/totallcount*100
+		print(paste0(done,"       ", site, "      ", day, "      " , poly1))
+        write.csv(control_tmp, control_tmp_pth,row.names=F)
         
         # Очищаем память после батча
         rm(result_batch)
         gc()
       }
+	  
+	stop_site_days_cam = as.numeric(Sys.time())
+	processing_times <- stop_site_days_cam - start_site_days_cam
+	countimgs=length(lstimgs)
+	speed = processing_times/countimgs
+	print(paste0("SPEED     " , speed, "  SECONS per 1 IMG"))
+	img_future= totallcount - length(control_tmp$img)
+	timetofinish = speed*img_future/60/60 # hours
+	 print(paste0("Time to finish   ",  timetofinish, " hours"))
+	  
+	  
     }
+	
+	
   }
 }

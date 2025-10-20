@@ -11,8 +11,8 @@
 		library(doParallel)
 	    library(foreach)
 
-Preddir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
-SSL_DB_dir= "/media/ivan/2023_ HD2/SSL_DB"
+Preddir =  "/mnt/adata8tb/SSL_DB_Tiles"
+SSL_DB_dir= "/mnt/adata8tb/SSL_DB"
 ###################################################
 listsites_presence = list.files(Preddir, full.names=T,pattern="Presence")
 ###########################################################
@@ -27,6 +27,7 @@ for (i in 1:length(listsites_presence)){
  site = site_info[[1]][2]
 # sitedir_branded  = gsub("Presence","Branded",sitedir_presence)
  SaveDir = gsub("Presence","CHECK",sitedir_presence)
+ unlink(SaveDir,recursive=T)
  dir.create(SaveDir,showWarnings=F)
   daysdir_presence =list.files(sitedir_presence,full.names=T)
   
