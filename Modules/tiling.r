@@ -15,15 +15,14 @@ num_cores <- 25
 registerDoMC(cores = num_cores)
 flog.appender(appender.file("parallel.log"))
 ##########################
-#indir = "/mnt/adata8tb/SSL_DB"
-#outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
+indir = "/mnt/adata8tb/SSL_DB"
+outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
+#############################################3
 #RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
 #imgsdtpth = "/home/ivan/image_data.csv"
 #control_tmp_pth="control_tmp.csv"
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
-indir = "/mnt/adata8tb/SSL_DB"
-outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
 RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
 imgsdtpth = "/home/npwc/image_data.csv"
 control_tmp_pth="control_tmp.csv"
@@ -52,8 +51,6 @@ tlsdone = data.frame(list.files(outdir,recursive=T,pattern=".JPG"))
 tlsdone$img=gsub(".*#", "", basename(tlsdone[,1]))
 control_tmp = data.frame(img=unique(tlsdone$img))
   if (length(control_tmp$img)>1){write.csv(control_tmp, control_tmp_pth, row.names=F)} else {
-
-
 control_tmp = data.frame(img="")}}
 ################################################################
  #lstdn =unlist(control_tmp)
@@ -263,10 +260,17 @@ for (sts in 1: length(uniqsites)){ #
         
         # Сохраняем результаты батча
 		resbtc=unlist(result_batch)
-		dn=data.frame(img=unique(basename(resbtc)))
+	
+		resbtc=data.frame(resbtc)
+		tlscount=length(resbtc[,1])
+		resbtc=data.frame(basename(resbtc[,1]))
+		imgdn =gsub(".*#", "", resbtc[,1])
+		dn=data.frame(img=unique(imgdn))
+		tilsperimgs = tlscount/length(dn$img)
 		
 		
         control_tmp <- rbind(control_tmp, dn)
+
 		
 		done = length(control_tmp$img)/totallcount*100
 		print(paste0(done,"       ", site, "      ", day, "      " , poly1))
@@ -281,7 +285,7 @@ for (sts in 1: length(uniqsites)){ #
 	processing_times <- stop_site_days_cam - start_site_days_cam
 	countimgs=length(lstimgs)
 	speed = processing_times/countimgs
-	print(paste0("SPEED     " , speed, "  SECONS per 1 IMG"))
+	print(paste0("SPEED     " , speed, "  SECONS per 1 IMG",  "Tiles per 1 img    ",tilsperimgs))
 	img_future= totallcount - length(control_tmp$img)
 	timetofinish = speed*img_future/60/60 # hours
 	 print(paste0("Time to finish   ",  timetofinish, " hours"))
