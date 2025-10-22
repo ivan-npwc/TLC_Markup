@@ -1,5 +1,5 @@
 
-  #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/PREDICT_PRESENCE-ABSENCE VGG16.r")
+#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/PREDICT_PRESENCE-ABSENCE VGG16.r")
 
 #tcltk::tk_choose.files()
 #watch -n 1 sensors
@@ -15,7 +15,7 @@
        
 		
 Path_model = "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/sealion_presence_absence_128_2025-09-29_accuracy_0.97_epoch_48.h5"
-Preddir =  "/media/ivan/USATOV_2024/SSL_DB_Tiles"
+Preddir =  "/mnt/adata8tb/SSL_DB_Tiles"
 file_size=2000
 batch_size=128
 vision_dimensions = 128
@@ -26,6 +26,7 @@ model_split=load_model_hdf5(Path_model)
 }
 ####################################################################
 listsites = list.files(Preddir, full.names=T,pattern="Tiles")
+totallcount = 14129255#  list.files(listsites, recursive=T)
 for (i in 1:length(listsites)){
  sitedir=listsites[i]
  
@@ -35,6 +36,7 @@ for (i in 1:length(listsites)){
  
  daysdir=list.files(sitedir,full.names=T)
    for (y in 1:length(daysdir)){
+   	start_site_days_pred = as.numeric(Sys.time())
  day = daysdir[y]
  PresenceDir = paste0(savesitedir1,"/",basename(day))
  dir.create(PresenceDir,showWarnings=F)
@@ -89,6 +91,18 @@ pres=preds3$link[preds3$name=="PRESENCE"]
 file.copy(pres,PresenceDir)
 write.csv(preds3,PesAbsPth, row.names=F)
 print(paste0("DONE sealion_presence:   ",  length(pres)," / ", length(listImgPred),"                    ",     day))
+stop_site_days_pred = as.numeric(Sys.time())
+processing_times <- stop_site_days_pred - start_site_days_pred
+countimgs=length(listImgPred)
+speed = processing_times/countimgs
+
+    print(paste0("SPEED     " , speed, "  SECONDS per 1 TLS"))
+	
+#	img_future= totallcount - length(control_tmp$img)
+#	timetofinish = speed*img_future/60/60 # hours
+    timetofinish = speed * totallcount/60/60 # hours
+	print(paste0("Time to finish   ",  timetofinish, " hours"))
+
 
 }
 }

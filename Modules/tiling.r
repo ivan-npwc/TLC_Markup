@@ -8,41 +8,44 @@ library(sf)
 library(tools)
 library(doMC) 
 library(futile.logger)
+library(parallel)
 ###########################
- # Обрабатываем изображения небольшими батчами
-batch_size <- 25 # Обрабатываем по 10 изображений за раз
-num_cores <- 25
-registerDoMC(cores = num_cores)
+num_physical_cores <- detectCores(logical = FALSE)
+num_cores_to_registr  = round(num_physical_cores - 0.2 *  num_physical_cores)
+batch_size <- num_cores_to_registr 
+
+registerDoMC(cores = num_cores_to_registr)
 flog.appender(appender.file("parallel.log"))
 ##########################
-indir = "/mnt/adata8tb/SSL_DB"
-outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
-#############################################3
-#RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
-#imgsdtpth = "/home/ivan/image_data.csv"
-#control_tmp_pth="control_tmp.csv"
-#source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+ indir = "/mnt/adata8tb/SSL_DB"
+ outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
+ control_tmp_pth="control_tmp.csv"
+ imgsdtpth = "image_data.csv"
+ task_coordination_pth = "/mnt/adata8tb/task_coordination/task_coordination.csv"
+#############################################
+ RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
+ source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
-RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
-imgsdtpth = "/home/npwc/image_data.csv"
-control_tmp_pth="control_tmp.csv"
-source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+#RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
+
+#source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
 #########################################
+computer_name <- Sys.info()["nodename"]
 RDSdata = readRDS(RDSpth)
-imgs_dt = read.csv(imgsdtpth)
-totallcount = length(unique(imgs_dt$image_path))
+imgs_dt_all = read.csv(imgsdtpth)
+totallcount=length(list.files(indir, recursive=T))
 if (dir.exists(indir)==F) {stop("NO IN DIR FOUND")}
 if (dir.exists(outdir)==F) {stop("NO OUT DIR FOUND")}
-#########################################
-if (file.exists(imgs_dt$image_path[1])==F){
+#################################################
+if (file.exists(imgs_dt_all$image_path[1])==F){
 print("SSL_DB path changed, please waite to restore the sistem info")
-  for (i in 1:length(imgs_dt$image_path)){  # for case if SSL_db pth changed
-    pth=imgs_dt$image_path[i]
+  for (i in 1:length(imgs_dt_all$image_path)){  # for case if SSL_db pth changed
+    pth=imgs_dt_all$image_path[i]
     bspth=strsplit(pth,"SSL_DB")
     newpth=paste0(indir,bspth[[1]][2])
-    imgs_dt$image_path[i]=newpth
+    imgs_dt_all$image_path[i]=newpth
   }
-  write.csv(imgs_dt,imgsdtpth,row.names=F)
+  write.csv(imgs_dt_all,imgsdtpth,row.names=F)
   }
 #####################################
 if (file.exists(control_tmp_pth)==T){control_tmp =read.csv(control_tmp_pth)} else {
@@ -53,18 +56,29 @@ control_tmp = data.frame(img=unique(tlsdone$img))
   if (length(control_tmp$img)>1){write.csv(control_tmp, control_tmp_pth, row.names=F)} else {
 control_tmp = data.frame(img="")}}
 ################################################################
- #lstdn =unlist(control_tmp)
- #tilsdone =data.frame(lstdn)
- #tilsdone =  unique(gsub(".*#", "", tilsdone$lstdn))
- #imgdone = data.frame(img=unique(tilsdone))
-# length(imgdone$img)
- 
-imgs_dt$img=basename(imgs_dt$image_path)
-imgs_dt=imgs_dt[imgs_dt$status == "success",]
-imgs_dt=imgs_dt[!imgs_dt$img %in%   control_tmp$img,]
+imgs_dt_all$img=basename(imgs_dt_all$image_path)
+imgs_dt=imgs_dt_all[imgs_dt_all$status == "success",]  # filter to exlude bad imgs 
+imgs_dt=imgs_dt[!imgs_dt$img %in%   control_tmp$img,]# filter to exlude imgs done
+##########################################################
+if (file.exists(task_coordination_pth)==F) {
 
-#needprocesscount = length(imgs_dt$img)
-#done = totallcount- needprocesscount
+imgs_dt_done = imgs_dt_all[imgs_dt_all$img %in%   control_tmp$img,]
+imgs_dt_done$year=substr(imgs_dt_done$img,1,4)
+imgs_dt_done=imgs_dt_done[order(imgs_dt_done$site),]
+imgs_dt_done$siteyear = paste0(imgs_dt_done$site,"_", imgs_dt_done$year)
+task_coordination = data.frame(siteyear=unique(imgs_dt_done$siteyear),computer_name=paste0(computer_name))
+write.csv(task_coordination,task_coordination_pth, row.names=F)
+
+}
+#########################################################
+if (file.exists(task_coordination_pth)) {
+task_coordination =read.csv(task_coordination_pth)
+imgs_dt$year =substr(imgs_dt$img,1,4)
+imgs_dt$siteyear = paste0(imgs_dt$site,"_", imgs_dt$year)
+task_exlude = task_coordination$siteyear[!task_coordination$computer_name == computer_name]
+imgs_dt = imgs_dt[!imgs_dt$siteyear %in% task_exlude,]  # filter to exlude 
+}
+#################################################
 donepercent = length(control_tmp$img)/totallcount*100
 print(donepercent)
 ###########################################chesk 
@@ -256,7 +270,7 @@ for (sts in 1: length(uniqsites)){ #
             flog.error(paste("Error processing", imgpth, ":", e$message))
             return(NULL)
           })
-        }, mc.cores = min(num_cores, length(batch_imgs)))  # Ограничиваем количество ядер  
+        }, mc.cores = min(num_cores_to_registr, length(batch_imgs)))  # Ограничиваем количество ядер  
         
         # Сохраняем результаты батча
 		resbtc=unlist(result_batch)
@@ -274,6 +288,7 @@ for (sts in 1: length(uniqsites)){ #
 		
 		done = length(control_tmp$img)/totallcount*100
 		print(paste0(done,"       ", site, "      ", day, "      " , poly1))
+		
         write.csv(control_tmp, control_tmp_pth,row.names=F)
         
         # Очищаем память после батча
@@ -285,7 +300,7 @@ for (sts in 1: length(uniqsites)){ #
 	processing_times <- stop_site_days_cam - start_site_days_cam
 	countimgs=length(lstimgs)
 	speed = processing_times/countimgs
-	print(paste0("SPEED     " , speed, "  SECONS per 1 IMG",  "Tiles per 1 img    ",tilsperimgs))
+	print(paste0("SPEED     " , speed, "  SECONDS per 1 IMG",  "Tiles per 1 img    ",tilsperimgs))
 	img_future= totallcount - length(control_tmp$img)
 	timetofinish = speed*img_future/60/60 # hours
 	 print(paste0("Time to finish   ",  timetofinish, " hours"))

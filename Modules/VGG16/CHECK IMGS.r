@@ -1,6 +1,6 @@
       
  #source("/home/npwc/GIT/TLC_Markup/Modules/VGG16/CHECK IMGS.r")
-
+ #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/CHECK IMGS.r")
 
 	    library(keras)
         library(magick)
@@ -12,8 +12,8 @@
 		
 		
 		
-    ssldir =  "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles"
-    dirforimgserr = "/media/npwc/Seagate Portable Drive/SSL_DB_Tiles/err_imgs"
+    ssldir =  "/mnt/adata8tb/SSL_DB_Tiles"
+    dirforimgserr = "/mnt/adata8tb/SSL_DB_Tiles/err_imgs"
 	
     file_size=2000
     vision_dimensions=2
