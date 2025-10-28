@@ -1,4 +1,7 @@
+
+
 #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/tiling.r")
+
 #source("/home/npwc/GIT/TLC_Markup/Modules/tiling.r")
 
 #source("/home/npwc/GIT/TLC_Markup/Modules/reconstract_image_from_tiles.r")
@@ -23,12 +26,11 @@ flog.appender(appender.file("parallel.log"))
  imgsdtpth = "image_data.csv"
  task_coordination_pth = "/mnt/adata8tb/task_coordination/task_coordination.csv"
 #############################################
- RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
- source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+# RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
+# source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
 ######################################### 
-#RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
-
-#source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
+source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
 #########################################
 computer_name <- Sys.info()["nodename"]
 RDSdata = readRDS(RDSpth)
