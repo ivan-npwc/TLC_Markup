@@ -19,20 +19,24 @@ batch_size <- num_cores_to_registr
 
 registerDoMC(cores = num_cores_to_registr)
 flog.appender(appender.file("parallel.log"))
+computer_name <- Sys.info()["nodename"]
 ##########################
  indir = "/mnt/adata8tb/SSL_DB"
  outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
  control_tmp_pth="control_tmp.csv"
  imgsdtpth = "image_data.csv"
- task_coordination_pth = "/mnt/adata8tb/task_coordination/task_coordination.csv"
+ task_coordination_pth = "/mnt/adata8tb/task_coordination.csv"
 #############################################
-# RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
-# source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+if (computer_name == "ivan-Alienware-m16-R1"){
+  RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
+ source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")} 
 ######################################### 
+if (computer_name != "ivan-Alienware-m16-R1"){
 RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
 source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+}
 #########################################
-computer_name <- Sys.info()["nodename"]
+
 RDSdata = readRDS(RDSpth)
 imgs_dt_all = read.csv(imgsdtpth)
 totallcount=length(list.files(indir, recursive=T))
@@ -62,24 +66,25 @@ imgs_dt_all$img=basename(imgs_dt_all$image_path)
 imgs_dt=imgs_dt_all[imgs_dt_all$status == "success",]  # filter to exlude bad imgs 
 imgs_dt=imgs_dt[!imgs_dt$img %in%   control_tmp$img,]# filter to exlude imgs done
 ##########################################################
-if (file.exists(task_coordination_pth)==F) {
-
 imgs_dt_done = imgs_dt_all[imgs_dt_all$img %in%   control_tmp$img,]
 imgs_dt_done$year=substr(imgs_dt_done$img,1,4)
 imgs_dt_done=imgs_dt_done[order(imgs_dt_done$site),]
 imgs_dt_done$siteyear = paste0(imgs_dt_done$site,"_", imgs_dt_done$year)
-task_coordination = data.frame(siteyear=unique(imgs_dt_done$siteyear),computer_name=paste0(computer_name))
-write.csv(task_coordination,task_coordination_pth, row.names=F)
-
-}
+task_coordination_new = data.frame(siteyear=unique(imgs_dt_done$siteyear),computer_name=paste0(computer_name))
+if (file.exists(task_coordination_pth)==F) {write.csv(task_coordination_new,task_coordination_pth, row.names=F)}
 #########################################################
 if (file.exists(task_coordination_pth)) {
-task_coordination =read.csv(task_coordination_pth)
+task_coordination_old =read.csv(task_coordination_pth)
+task_coordination = unique(rbind(task_coordination_old, task_coordination_new))
+write.csv(task_coordination, task_coordination_pth, row.names=F)
+
+}
 imgs_dt$year =substr(imgs_dt$img,1,4)
 imgs_dt$siteyear = paste0(imgs_dt$site,"_", imgs_dt$year)
 task_exlude = task_coordination$siteyear[!task_coordination$computer_name == computer_name]
+print(paste0("EXLUDED ", task_exlude, "   DUE TO PROUCESED BY OTHER MASHINE"))
 imgs_dt = imgs_dt[!imgs_dt$siteyear %in% task_exlude,]  # filter to exlude 
-}
+
 #################################################
 donepercent = length(control_tmp$img)/totallcount*100
 print(donepercent)
