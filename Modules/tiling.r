@@ -26,14 +26,19 @@ computer_name <- Sys.info()["nodename"]
  control_tmp_pth="control_tmp.csv"
  imgsdtpth = "image_data.csv"
  task_coordination_pth = "/mnt/adata8tb/task_coordination.csv"
+ if (
+ #
 #############################################
 if (computer_name == "ivan-Alienware-m16-R1"){
   RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
- source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")} 
+ source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
+ #task_coordination_pth = "/run/user/1000/gvfs/google-drive:host=gmail.com,user=usatov.ivan.alex/0APGgp9rThTKZUk9PVA/task_coordination.csv"
+ } 
 ######################################### 
 if (computer_name != "ivan-Alienware-m16-R1"){
 RDSpth = "/home/npwc/GIT/TLC_Markup/image_tiles.rds"
 source("/home/npwc/GIT/TLC_Markup/Modules/RDStoTable.r")
+#task_coordination_pth = "/run/user/1000/gvfs/google-drive:host=gmail.com,user=usatov.ivan.alex/0APGgp9rThTKZUk9PVA/task_coordination.csv"
 }
 #########################################
 
