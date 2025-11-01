@@ -26,7 +26,6 @@ computer_name <- Sys.info()["nodename"]
  control_tmp_pth="control_tmp.csv"
  imgsdtpth = "image_data.csv"
  task_coordination_pth = "/mnt/adata8tb/task_coordination.csv"
- if (
  #
 #############################################
 if (computer_name == "ivan-Alienware-m16-R1"){
