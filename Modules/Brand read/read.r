@@ -1,5 +1,5 @@
 
-  #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/VGG16/PREDICT_BRANDED-NONBRANDED_VGG16.r")
+  #source("/home/ivan/GIT_HUB/TLC_Markup/Modules/Brand read/read.r")
 
 #tcltk::tk_choose.files()
 #watch -n 1 sensors
@@ -10,48 +10,54 @@
         library(magick)
         library(tidyr)
         library(tfdatasets)
-	library(tidyverse)
+	    library(tidyverse)
     	library(reticulate)
        
 		
-Path_model_br = "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/branded_not_branded_128_2025-10-13_accuracy_0.92_epoch_97.h5"
+Yar_Path_model_br =  "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/Brand read/Yar_read.h5"
+Yar_name_pth =         "/home/ivan/GIT_HUB/TLC MarkUp System data/Models/Brand read/Yar_Name.csv"
+
 Preddir  =  "/mnt/adata8tb/SSL_DB_Tiles"
 file_size=2000
 batch_size=128
-vision_dimensions = 256
-Pred_Name= c( "BRENDED","NONBRENDED")
-#######################################################################
-if(exists("model_split_brand")==F) {
-model_split_brand =load_model_hdf5(Path_model_br)
-}
+vision_dimensions = 95
+siteselect=c()
 ####################################################################
-listsites = list.files(Preddir, full.names=T,pattern="Presence")
+listsites = list.files(Preddir, full.names=T,pattern="Search256")
 for (i in 1:length(listsites)){
- sitedir=listsites[i]
+ sitedir =listsites[i]
+  bsnm = basename(sitedir)
+  site = strsplit(bsnm, "_")[[1]][2]
+  if (site %in% siteselect == F) next
+  year = strsplit(bsnm, "_")[[1]][1]
+  map=paste0(year,"_",site,"_Map")
+ if (site==145){model_read_brand =load_model_hdf5(Yar_Path_model_br)
+                       Pred_Name= read.csv(Yar_name_pth)
+
+ } else {next}
  
- savesitedir = gsub("Presence","Branded",basename(sitedir))
- savesitedir1 = paste0(Preddir,"/",savesitedir)
- unlink(savesitedir1, recursive=T)
+ savesitedir = gsub("Search256","Brand_read",basename(sitedir))
+ savesitedir1 = file.path(Preddir,savesitedir)
+ #unlink(savesitedir1, recursive=T)
  dir.create(savesitedir1,showWarnings=F)
  
  daysdir=list.files(sitedir,full.names=T)
    for (y in 1:length(daysdir)){
  day = daysdir[y]
- BrandedDir = paste0(savesitedir1,"/",basename(day))
- dir.create(BrandedDir,showWarnings=F)
- PesAbsPth =paste0(BrandedDir,"/sealion_branded_nonbranded.csv")
- listImgPred <- list.files(day, full.names=T,pattern="JPG")
+ 
+ #BrandedDir = paste0(savesitedir1,"/",basename(day))
+ #dir.create(BrandedDir,showWarnings=F)
+
+ listImgPred <- list.files(day, full.names=T,pattern="CROP")
  if (length(listImgPred)==0) {print("No Imgs Found");next}
- data <- tibble::tibble(img = listImgPred)
+ print(day)
+
  ###############################################################
             inf=data.frame(listImgPred=listImgPred,file_size=as.numeric(file.size(listImgPred)))
 			listImgPred=inf$listImgPred[inf$file_size > file_size]
 			exl=length(inf$listImgPred[inf$file_size < file_size])
 			print(paste0("Exlude  ", exl, " Images and for predict available  ", length (listImgPred) , "   Images"))
- ###############################################################
- if (file.exists(PesAbsPth))  {tbl1=read.csv(PesAbsPth)
- if (length(listImgPred)== length(tbl1[,1])){print(paste0("SKIP    ",BrandedDir)); next}
-     }
+			 data <- tibble::tibble(img = listImgPred)
 ############################################################################
 	create_dataset <- function(data, train, batch_size = batch_size, vision_dimensions) {
 	 
@@ -76,26 +82,25 @@ for (i in 1:length(listsites)){
 	################################
 	if (length(listImgPred) <2 ) next
 		pred_data_set <- create_dataset(data, train = FALSE, batch_size=batch_size, vision_dimensions=vision_dimensions)
-		pred = model_split_brand %>% predict(pred_data_set)
+		pred = model_read_brand %>% predict(pred_data_set)
 ###############################################################################################
-    preds3 <<- data.frame(pred)
-	names(preds3) <- Pred_Name
-	preds3$link=listImgPred
-	preds3$BRENDED= preds3$BRENDED
-for (w in 1:length(listImgPred)) {
-   if(preds3[,1][w]> preds3[,2][w]){preds3$name[w]=Pred_Name[1]}
-   if(preds3[,1][w]< preds3[,2][w]){preds3$name[w]=Pred_Name[2]}
-   }
-   
-pres=preds3$link[preds3$name=="BRENDED"]
+   predicted_classes <- apply(pred, 1, which.max)
+   predicted_names <- Pred_Name[predicted_classes,]
+   preddt =data.frame(listImgPred=listImgPred,predicted_names=predicted_names)
+   unuqbrand = unique(predicted_names)
+    for (b in 1:length(unuqbrand)){
+     brand = unuqbrand[b]
+	 imgs = preddt$listImgPred[preddt$predicted_names == brand]
+	 copydirto=file.path(savesitedir1,brand)
+	 dir.create(copydirto,showWarnings=F)
+   file.copy(imgs,copydirto)
+#write.csv(preds3,PesAbsPth, row.names=F)
 
-file.copy(pres,BrandedDir)
-write.csv(preds3,PesAbsPth, row.names=F)
-print(paste0("DONE sealion_presence:   ",  length(pres)," / ", length(listImgPred),"                    ",     day))
 
 }
 }
-
+print(paste0("DONE sealion_read brand:   ",  day))
+}
 
 
 

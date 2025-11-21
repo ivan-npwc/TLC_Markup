@@ -25,13 +25,13 @@ computer_name <- Sys.info()["nodename"]
  outdir =  "/mnt/adata8tb/SSL_DB_Tiles"
  control_tmp_pth="control_tmp.csv"
  imgsdtpth = "image_data.csv"
- task_coordination_pth = "/mnt/adata8tb/task_coordination.csv"
- #
+#task_coordination_pth = "/run/user/1000/gvfs/google-drive:host=gmail.com,user=usatov.ivan.alex/0APGgp9rThTKZUk9PVA/task_coordination.csv"
+ task_coordination_pth = "task_coordination.csv"
 #############################################
 if (computer_name == "ivan-Alienware-m16-R1"){
   RDSpth = "/home/ivan/GIT_HUB/TLC_Markup/image_tiles.rds"
  source("/home/ivan/GIT_HUB/TLC_Markup/Modules/RDStoTable.r")
- #task_coordination_pth = "/run/user/1000/gvfs/google-drive:host=gmail.com,user=usatov.ivan.alex/0APGgp9rThTKZUk9PVA/task_coordination.csv"
+
  } 
 ######################################### 
 if (computer_name != "ivan-Alienware-m16-R1"){
@@ -83,6 +83,7 @@ task_coordination = unique(rbind(task_coordination_old, task_coordination_new))
 write.csv(task_coordination, task_coordination_pth, row.names=F)
 
 }
+print(task_coordination)
 imgs_dt$year =substr(imgs_dt$img,1,4)
 imgs_dt$siteyear = paste0(imgs_dt$site,"_", imgs_dt$year)
 task_exlude = task_coordination$siteyear[!task_coordination$computer_name == computer_name]
@@ -122,10 +123,10 @@ if(length(uniqerr>0)){
 #######################################################################
 imgs_dt$day=substr(basename(imgs_dt$image_path),1,8)
 ##############	
-uniqsites =unique(imgs_dt$site)	
+#uniqsites =unique(imgs_dt$site)	
 uniqcam =unique(imgs_dt$poly)
 uniqday =unique(imgs_dt$day)
-
+unique_siteyear = unique(imgs_dt$siteyear)
 # Функция для проверки пересечения тайла с маской
 check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) { 
   # Определяем координаты всех четырех углов тайла
@@ -152,8 +153,15 @@ check_tile_corners <- function(x_start, y_start, tile_size, mask_polygon) {
   intersections <- st_intersects(corner_points, mask_polygon, sparse = FALSE)
   return(any(intersections))
 }
-
-# Основной цикл обработки
+  for (sty in 1:length(unique_siteyear)){
+   siteyear = unique_siteyear[sty]
+   
+   add1=data.frame(siteyear=siteyear, computer_name=computer_name)
+   task_coordination=rbind(add1,task_coordination)
+   write.csv(task_coordination,task_coordination_pth, row.names=F)
+   
+   
+   uniqsites = unique(imgs_dt$site[imgs_dt$siteyear==siteyear])	
 for (sts in 1: length(uniqsites)){ #
   site = uniqsites[sts]
  # print(site)
@@ -321,4 +329,8 @@ for (sts in 1: length(uniqsites)){ #
 	
 	
   }
+}
+
+
+
 }
