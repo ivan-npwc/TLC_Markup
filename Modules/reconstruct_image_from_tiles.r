@@ -1,9 +1,11 @@
+   library(EBImage)
 
 
-      ssldbdir ="/media/ivan/2023_ HD2/SSL_DB"
-      dirtiles =  "/media/ivan/USATOV_2024/SSL_DB_Tiles/2022_33_Tiles/20220811"
+
+      ssldbdir ="/home/npwc/NAS_TITAN/SSL_DB"
+      dirtiles =  "/home/npwc/adata8tb/SSL_DB_Tiles/2023_33_Tiles/20230101"
 	  svdir =ssldbdir
-      lsttiles = list.files(dirtiles, full.names=T, recursive=T)
+      lsttiles = list.files(dirtiles, full.names=T, recursive=T,pattern="JPG")
       lsttiles =data.frame(pth=lsttiles)
 	  lsttiles$bsn_tls=basename(lsttiles$pth)
 	  ####################################
